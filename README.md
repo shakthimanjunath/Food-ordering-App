@@ -1,61 +1,48 @@
-# :space_invader: React Native Template TypeScript · [![Build Status](https://travis-ci.org/emin93/react-native-template-typescript.svg?branch=master)](https://travis-ci.org/emin93/react-native-template-typescript)
+# Rituals Consumer App
 
-Clean and minimalist React Native template for a quick start with TypeScript.
+The new Rituals app. Appsolutely inspirational! Build with React Native
 
-[![Header](https://cdn-images-1.medium.com/max/500/1*E9RnPOATuhjuNrlFkv5oSg.jpeg)](https://medium.com/@emin93/react-native-typescript-b965059109d3)
+## How to Setup
 
-## :star: Features
+**Step 1:** git clone this repo:
 
-- Seamlessly integrated into the React Native CLI! :sparkles:
-- Consistent with the default React Native template
-- Always latest dependencies :raised_hands:
+**Step 2:** cd to the cloned repo:
 
-## :arrow_forward: Quick Start
+**Step 3:** Install the packages with `npm install`
+
+**Step 4:** Run the app with `npm run start:ios` or `npm run start:android`
+
+
+## Configuration
+
+Before being able to run this project, you will need to install all dependencies through `npm` > 3 or `yarn`
+
+## Npm scripts
+
+The following npm scripts are used during development
+
+| Command       | Description                                                 |
+| ------------- | ----------------------------------------------------------- |
+| build         | Clean and compile the typescript code                       |
+| clean         | Remove the compiled code                                    |
+| start:ios     | Compile sources, watch for changes and run ios project      |
+| start:android | Compile sources, watch for changes and run android project  |
+| tsc           | Run TypeScript compiler                                     |
+| test          | Run Test script runner                                      |
+| watch         | Run build command and watch for changes                     |
+
+### iOS
+
+Run this command to start developing for iOS
 
 ```bash
-react-native init MyApp --template typescript && node MyApp/setup.js
+npm run start:ios
 ```
 
-## :question: FAQ
+### Android
 
-### Why this template when React Native 0.57+ supports TypeScript out of the box?
+Run this command to start developing for Android
 
-Actually, when React Native 0.57 was announced, I planned to stop maintenance on this template. But after further evaluation, there's still quite a lot of manual work to do (add type definitions for React & React Native, create a `.tsconfig` for type checking, etc.) to properly set up a React Native 0.57+ TypeScript project. And that's where this template comes in and does that work for you. :raised_hands:
-
-### What additional dependencies are included in this template?
-
-- [TypeScript](https://github.com/Microsoft/TypeScript)
-- [Type definitions for React & React Native](https://github.com/DefinitelyTyped/DefinitelyTyped)
-- [ts-jest](https://github.com/kulshekhar/ts-jest)
-
-This template always uses the latest versions of the dependencies at the time when the `react-native init` command is being executed. This means you don't have to worry about old versions.
-
-Lots of :heart: and credits to the owners and maintainers of those packages.
-
-### Why the setup script?
-
-It deletes obsolete files like the `.flowconfig` and the `setup.js` itself after the setup.
-
-### How to do type checking?
-
-`npm run tsc`
-
-### Does debugging work?
-
-Yes it does.
-
-[![Demonstration of working breakpoints in Visual Studio Code](https://cdn-images-1.medium.com/max/1600/1*ZXfzgq1xKz1B3chYy9xE7w.png)](https://medium.com/@emin93/react-native-typescript-b965059109d3)
-
-## :globe_with_meridians: Links
-
-- ["Using React Native with TypeScript just became simple" on Medium](https://medium.com/@emin93/react-native-typescript-b965059109d3)
-- ["24 tips for React Native you probably want to know" on Albert Gao's blog](http://albertgao.xyz/2018/05/30/24-tips-for-react-native-you-probably-want-to-know/#9-For-Typescript)
-- ["3 Easy Steps to Set Up React Native with TypeScript, Jest and Enzyme" on Medium by Jan Hesters](https://medium.com/@jan.hesters/3-easy-steps-to-set-up-react-native-with-typescript-jest-and-enzyme-592ca042262f)
-
-## :computer: Contributing
-
-Contributions are very welcome. Please check out the [contributing document](https://github.com/emin93/react-native-template-typescript/blob/master/CONTRIBUTING.md).
-
-### Donations
-
-I created this project in my spare time because I enjoy coding. Of course you can support me by [buying me a coffee](https://www.paypal.me/emin93) if you wish. :coffee: :relieved:
+```bash
+npm run start:android
+```
