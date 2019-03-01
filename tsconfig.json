@@ -19,5 +19,5 @@
     "types": ["react", "react-native", "jest"]
   },
   "filesGlob": ["types/**", "src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["android", "ios", "build", "dist", "node_modules", "babel.config.js"],
+  "exclude": ["android", "ios", "build", "dist", "node_modules"],
 }
