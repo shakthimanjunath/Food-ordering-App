@@ -1,6 +1,6 @@
-# Rituals Consumer App
+# Food Ordering App
 
-The new Rituals app. Appsolutely inspirational! Build with React Native
+Built with React Native, Graphcool and Apollo client. 
 
 ## How to Setup
 
