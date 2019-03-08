@@ -9,7 +9,7 @@ import { isNil, get } from 'lodash';
 
 interface HomeHeaderProps {
   drawer: boolean;
-  onRightIconPress: Function;
+  onRightIconPress(userId: string): void;
   closeDrawer: Function;
   openDrawer: Function;
 }
@@ -57,7 +57,7 @@ export default class HomeScreenHeader extends React.Component<
                 icon: 'shopping-cart',
                 color: '#fff',
                 size: 20,
-                onPress: () => this.props.onRightIconPress()
+                onPress: () => this.props.onRightIconPress(this.state.userId)
               }
             : this._renderNumberOfItems(numberOfOrders)
         }
@@ -71,7 +71,7 @@ export default class HomeScreenHeader extends React.Component<
   _renderNumberOfItems(numberOfOrders: number) {
     return (
       <TouchableOpacity
-        onPress={() => this.props.onRightIconPress()}
+        onPress={() => this.props.onRightIconPress(this.state.userId)}
         style={{
           backgroundColor: 'white',
           height: 30,

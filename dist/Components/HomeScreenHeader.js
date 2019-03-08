@@ -34,12 +34,12 @@ export default class HomeScreenHeader extends React.Component {
                     icon: 'shopping-cart',
                     color: '#fff',
                     size: 20,
-                    onPress: () => this.props.onRightIconPress()
+                    onPress: () => this.props.onRightIconPress(this.state.userId)
                 }
                 : this._renderNumberOfItems(numberOfOrders), centerComponent: { text: 'Menu', style: { color: '#fff' } }, containerStyle: { backgroundColor: guide.buttonColor }, barStyle: "light-content" }));
     }
     _renderNumberOfItems(numberOfOrders) {
-        return (React.createElement(TouchableOpacity, { onPress: () => this.props.onRightIconPress(), style: {
+        return (React.createElement(TouchableOpacity, { onPress: () => this.props.onRightIconPress(this.state.userId), style: {
                 backgroundColor: 'white',
                 height: 30,
                 width: 30,

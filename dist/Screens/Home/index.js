@@ -60,7 +60,7 @@ export default class Home extends React.Component {
     }
     render() {
         return (React.createElement(View, null,
-            React.createElement(HomeScreenHeader, { drawer: this.state.drawer, closeDrawer: this.closeDrawer, openDrawer: this.openDrawer, onRightIconPress: () => this.props.navigation.navigate('Cart') }),
+            React.createElement(HomeScreenHeader, { drawer: this.state.drawer, closeDrawer: this.closeDrawer, openDrawer: this.openDrawer, onRightIconPress: userId => this.props.navigation.navigate('Cart', { userId: userId }) }),
             React.createElement(Drawer, { ref: ref => {
                     this.drawer = ref;
                 }, content: React.createElement(SideBar, { navigation: this.props.navigation, closeDrawer: this.closeDrawer }), onClose: () => this.closeDrawer() }),

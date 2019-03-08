@@ -18,3 +18,25 @@ export const menuItemListSubscription = gql`
     }
   }
 `;
+
+export const orderListSubscription = gql`
+  subscription newOrderItems {
+    Order(filter: { mutation_in: [CREATED, DELETED, UPDATED] }) {
+      mutation
+      node {
+        id
+        status
+        menuItem {
+          id
+          name
+          imageURL
+        }
+      }
+      updatedFields
+      previousValues {
+        id
+        status
+      }
+    }
+  }
+`;

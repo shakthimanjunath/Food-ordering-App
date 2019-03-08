@@ -86,7 +86,9 @@ export default class Home extends React.Component<HomeProps, HomeState> {
           drawer={this.state.drawer}
           closeDrawer={this.closeDrawer}
           openDrawer={this.openDrawer}
-          onRightIconPress={() => this.props.navigation.navigate('Cart')}
+          onRightIconPress={userId =>
+            this.props.navigation.navigate('Cart', { userId: userId })
+          }
         />
         <Drawer
           ref={ref => {

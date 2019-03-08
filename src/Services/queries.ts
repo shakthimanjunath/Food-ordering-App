@@ -44,3 +44,16 @@ export const getOrdersForUser = gql`
     }
   }
 `;
+
+export const getCartProducts = gql`
+  query getOrderForCurrentUser($id: ID) {
+    allOrders(filter: { user: { id: $id } }) {
+      id
+      menuItem {
+        id
+        name
+        imageURL
+      }
+    }
+  }
+`;
