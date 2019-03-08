@@ -1,45 +1,16 @@
 import React from 'react';
-import { isNil } from 'lodash';
-import { View, Dimensions, Text, ScrollView } from 'react-native';
-import { Header, Avatar } from 'react-native-elements';
-import { guide } from '../../Styles/CommonStyles';
+import { isNil, get } from 'lodash';
+import { View, Dimensions } from 'react-native';
 import { Drawer } from 'native-base';
 import SideBar from '../../Components/SideBar';
-const { width, height } = Dimensions.get('window');
-const Menu = [
-    {
-        name: 'a',
-        image: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg'
-    },
-    {
-        name: 'b',
-        image: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg'
-    },
-    {
-        name: 'c',
-        image: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg'
-    },
-    {
-        name: 'd',
-        image: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg'
-    },
-    {
-        name: 'e',
-        image: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg'
-    },
-    {
-        name: 'f',
-        image: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg'
-    },
-    {
-        name: 'g',
-        image: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg'
-    },
-    {
-        name: 'h',
-        image: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg'
-    },
-];
+import { Query } from 'react-apollo';
+import Loader from '../../Components/Loader';
+import Error from '../../Components/Error';
+import { menuItemList } from '../../Services/queries';
+import MenuItemList from '../../Components/MenuScreenComponents/MenuItemList';
+import { menuItemListSubscription } from '../../Services/Subscriptions';
+import HomeScreenHeader from '../../Components/HomeScreenHeader';
+const { width } = Dimensions.get('window');
 export default class Home extends React.Component {
     constructor(props) {
         super(props);
@@ -59,29 +30,47 @@ export default class Home extends React.Component {
         let hidesplashScreen = this.props.navigation.getParam('hideSplashscreen');
         !isNil(hidesplashScreen) && hidesplashScreen();
     }
-    _renderMenuItem(index, item) {
-        return (React.createElement(View, { key: index, style: { width: width / 2.8, height: height / 3, marginHorizontal: 15, marginVertical: 5 } },
-            React.createElement(Avatar, { source: {
-                    uri: item.image
-                }, containerStyle: { flex: 0.7, width: '100%' } }),
-            React.createElement(Text, { style: { flex: 0.3, textAlign: 'center', marginTop: 10 } }, item.name)));
+    subscribeToMenuList(subscribe) {
+        subscribe({
+            document: menuItemListSubscription,
+            fetchPolicy: 'network-only',
+            updateQuery: (previousState, { subscriptionData }) => {
+                let menus;
+                // If new menu item is added, add new node to list
+                if (!isNil(subscriptionData.data.Menu.node)) {
+                    menus = [
+                        ...previousState.allMenus.filter(item => item.id !== subscriptionData.data.Menu.node.id),
+                        subscriptionData.data.Menu.node
+                    ];
+                }
+                // If menu item is deleted, remove that item from list
+                else if (!isNil(subscriptionData.data.Menu.previousValues)) {
+                    menus = [
+                        ...previousState.allMenus.filter(item => item.id !== subscriptionData.data.Menu.previousValues.id)
+                    ];
+                }
+                // else return list as it is
+                else {
+                    menus = [...previousState.allMenus];
+                }
+                return { allMenus: menus };
+            },
+            onError: err => console.error(err)
+        });
     }
     render() {
         return (React.createElement(View, null,
-            React.createElement(Header, { leftComponent: {
-                    icon: 'menu',
-                    color: '#fff',
-                    onPress: () => { this.state.drawer ? this.closeDrawer() : this.openDrawer(); }
-                }, rightComponent: {
-                    icon: 'shopping-cart',
-                    color: '#fff',
-                    onPress: () => this.props.navigation.navigate('Cart')
-                }, centerComponent: { text: 'Menu', style: { color: '#fff' } }, containerStyle: { backgroundColor: guide.buttonColor }, barStyle: "light-content" }),
-            React.createElement(Drawer, { ref: (ref) => { this.drawer = ref; }, content: React.createElement(SideBar, { navigation: this.props.navigation, closeDrawer: this.closeDrawer }), onClose: () => this.closeDrawer() }),
-            React.createElement(ScrollView, { style: { padding: 20, zIndex: -10 } },
-                React.createElement(View, { style: { flexWrap: "wrap", flexDirection: 'row' } }, Menu.map((item, index) => {
-                    return this._renderMenuItem(index, item);
-                })))));
+            React.createElement(HomeScreenHeader, { drawer: this.state.drawer, closeDrawer: this.closeDrawer, openDrawer: this.openDrawer, onRightIconPress: () => this.props.navigation.navigate('Cart') }),
+            React.createElement(Drawer, { ref: ref => {
+                    this.drawer = ref;
+                }, content: React.createElement(SideBar, { navigation: this.props.navigation, closeDrawer: this.closeDrawer }), onClose: () => this.closeDrawer() }),
+            React.createElement(Query, { query: menuItemList }, ({ loading, error, data, subscribeToMore }) => {
+                return (React.createElement(View, { style: {
+                        width: width,
+                        height: '90%',
+                        zIndex: -100
+                    } }, loading ? (React.createElement(Loader, null)) : error ? (React.createElement(Error, { errorMessage: "Sorry, Some unexpected error occurred." })) : get(data, 'allMenus', []).length === 0 ? (React.createElement(Error, { errorMessage: "Sorry, No menu items found." })) : (React.createElement(MenuItemList, { menuItemList: data, subscribe: () => this.subscribeToMenuList(subscribeToMore) }))));
+            })));
     }
 }
 //# sourceMappingURL=index.js.map

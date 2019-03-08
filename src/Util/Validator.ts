@@ -1,6 +1,10 @@
 import { isNil } from 'lodash';
 
-export function emailValidator(text: string | undefined, onValid: Function, onInvalid: Function) {
+export function emailValidator(
+  text: string | undefined,
+  onValid: Function,
+  onInvalid: Function
+) {
   if (!isNil(text) && text.length > 0) {
     const emailRegExp = /^[a-zA-Z0-9]+@[a-zA-Z]+\.[a-zA-Z]+$/;
     text.match(emailRegExp) ? onValid() : onInvalid('Invalid email');
@@ -44,4 +48,8 @@ export function confirmPasswordValidator(
   } else {
     onValid();
   }
+}
+
+export function RequiredValidator(value, onValid, onInvalid) {
+  isNil(value) ? onInvalid('Required') : onValid();
 }

@@ -4,12 +4,15 @@ import { View, Alert } from 'react-native';
 import { NavigationScreenProp, NavigationState } from 'react-navigation';
 import { styles, guide } from '../../Styles/CommonStyles';
 import { emailValidator, passwordValidator } from '../../Util/Validator';
-import { isNil } from 'lodash';
+import { isNil, get } from 'lodash';
 import InputBox from '../../Components/InputBox';
-import { login } from '../../Services/Auth';
+import { compose, withApollo } from 'react-apollo';
+import { checkForUserLoginCredentials } from '../../Services/queries';
+import { loginSuccessfull } from '../../Services/Auth';
 
 interface Props {
   navigation: NavigationScreenProp<NavigationState>;
+  client: any;
 }
 
 interface LoginState {
@@ -19,8 +22,9 @@ interface LoginState {
   email: string | undefined;
   password: string | undefined;
   loading: boolean;
+  showPassword: Boolean;
 }
-export default class Login extends PureComponent<Props, LoginState> {
+class Login extends PureComponent<Props, LoginState> {
   inputRefs: any = [];
   constructor(props: Props) {
     super(props);
@@ -30,7 +34,8 @@ export default class Login extends PureComponent<Props, LoginState> {
       passwordError: undefined,
       email: undefined,
       password: undefined,
-      loading: false
+      loading: false,
+      showPassword: false
     };
   }
 
@@ -47,7 +52,7 @@ export default class Login extends PureComponent<Props, LoginState> {
     passwordValidator(
       this.state.password,
       () => {
-        this.setState({ passwordError: undefined, loading: false }, () => callBack());
+        this.setState({ passwordError: undefined }, () => callBack());
       },
       (error: string) => {
         this.setState({ passwordError: error, loading: false });
@@ -59,9 +64,49 @@ export default class Login extends PureComponent<Props, LoginState> {
     this.inputRefs[nextField].input.focus();
   }
 
+  login() {
+    this.props.client
+      .query({
+        query: checkForUserLoginCredentials,
+        variables: {
+          mailId: get(this.state, 'email', ''),
+          password: get(this.state, 'password', '')
+        }
+      })
+      .then(data => {
+        if (get(data.data, 'allUsers').length === 0) {
+          this.setState({
+            passwordError: 'wrong credential',
+            loading: false,
+            emailIdError: 'wrong credential'
+          });
+        } else {
+          this.setState({ loading: false }, () =>
+            loginSuccessfull(
+              data.data.allUsers[0].id,
+              () => this.props.navigation.navigate('Home'),
+              () => {
+                Alert.alert(
+                  'Could not complete Login process. Please login again for login persistance'
+                );
+              }
+            )
+          );
+        }
+      })
+      .catch(error => {
+        console.log('login error:', error);
+        Alert.alert(
+          'Could not complete Signup process. Please login again for login persistance'
+        );
+      });
+  }
+
   render() {
-    const showEmailErrorMessage = this.state.formSubmitted && !isNil(this.state.emailIdError);
-    const showPasswordErrorMessage = this.state.formSubmitted && !isNil(this.state.passwordError);
+    const showEmailErrorMessage =
+      this.state.formSubmitted && !isNil(this.state.emailIdError);
+    const showPasswordErrorMessage =
+      this.state.formSubmitted && !isNil(this.state.passwordError);
     return (
       <View style={{ flex: 1 }}>
         <Header
@@ -74,8 +119,10 @@ export default class Login extends PureComponent<Props, LoginState> {
           containerStyle={{ backgroundColor: guide.buttonColor }}
           barStyle="light-content"
         />
-        <View style={{ flex: 4, justifyContent: 'center', alignItems: 'center' }}>
-          <Avatar source={require("../../../Images/logo.png")} size="xlarge" />
+        <View
+          style={{ flex: 4, justifyContent: 'center', alignItems: 'center' }}
+        >
+          <Avatar source={require('../../../Images/logo.png')} size="xlarge" />
         </View>
         <View style={{ flex: 6 }}>
           <InputBox
@@ -112,7 +159,21 @@ export default class Login extends PureComponent<Props, LoginState> {
           <InputBox
             showErrorMessage={showPasswordErrorMessage}
             errorMessage={this.state.passwordError}
-            secureTextEntry={true}
+            secureTextEntry={!this.state.showPassword}
+            extras={{
+              rightIcon: {
+                name: !this.state.showPassword ? 'lock' : 'lock-open',
+                color: 'black',
+                onPress: () =>
+                  this.setState({
+                    showPassword: !this.state.showPassword
+                  })
+              },
+              rightIconContainerStyle: {
+                width: 50,
+                height: 50
+              }
+            }}
             placeHolder="Password"
             saveRef={(ref: any) => (this.inputRefs['Password'] = ref)}
             onBlur={() => {
@@ -149,19 +210,9 @@ export default class Login extends PureComponent<Props, LoginState> {
             containerStyle={{ paddingHorizontal: 10, borderRadius: 20 }}
             onPress={() => {
               this.setState({ formSubmitted: true, loading: true }, () =>
-                this.validateForm(() =>
-                  login(
-                    this.state.email,
-                    this.state.password,
-                    () => {
-                      this.setState({ loading: false });
-                      this.props.navigation.navigate('Home');
-                    },
-                    () => {
-                      Alert.alert('Could not Login');
-                    }
-                  )
-                )
+                this.validateForm(() => {
+                  this.login();
+                })
               );
             }}
           />
@@ -170,3 +221,5 @@ export default class Login extends PureComponent<Props, LoginState> {
     );
   }
 }
+
+export default compose(withApollo)(Login);

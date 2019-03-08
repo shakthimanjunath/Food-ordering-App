@@ -7,6 +7,7 @@ interface Props {
   secureTextEntry?: boolean;
   showErrorMessage?: boolean;
   errorMessage: string | undefined;
+  extras?: any;
   onSubmit?(): void;
   saveRef(ref: any): void;
   onBlur?(): void;
@@ -28,8 +29,11 @@ export default class InputBox extends PureComponent<Props> {
           secureTextEntry={this.props.secureTextEntry}
           onBlur={this.props.onBlur}
           onSubmitEditing={this.props.onSubmit}
+          {...this.props.extras}
         />
-          <Text style={styles.errorText}>{this.props.showErrorMessage &&  this.props.errorMessage}</Text>
+        <Text style={styles.errorText}>
+          {this.props.showErrorMessage && this.props.errorMessage}
+        </Text>
       </View>
     );
   }

@@ -33,4 +33,7 @@ export function confirmPasswordValidator(passwordText, confirmPasswordText, onVa
         onValid();
     }
 }
+export function RequiredValidator(value, onValid, onInvalid) {
+    isNil(value) ? onInvalid('Required') : onValid();
+}
 //# sourceMappingURL=Validator.js.map

@@ -3,10 +3,12 @@ import { Avatar, Button, Header } from 'react-native-elements';
 import { View, Alert } from 'react-native';
 import { styles, guide } from '../../Styles/CommonStyles';
 import { emailValidator, passwordValidator } from '../../Util/Validator';
-import { isNil } from 'lodash';
+import { isNil, get } from 'lodash';
 import InputBox from '../../Components/InputBox';
-import { login } from '../../Services/Auth';
-export default class Login extends PureComponent {
+import { compose, withApollo } from 'react-apollo';
+import { checkForUserLoginCredentials } from '../../Services/queries';
+import { loginSuccessfull } from '../../Services/Auth';
+class Login extends PureComponent {
     constructor(props) {
         super(props);
         this.inputRefs = [];
@@ -16,7 +18,8 @@ export default class Login extends PureComponent {
             passwordError: undefined,
             email: undefined,
             password: undefined,
-            loading: false
+            loading: false,
+            showPassword: false
         };
     }
     validateForm(callBack) {
@@ -26,13 +29,41 @@ export default class Login extends PureComponent {
             this.setState({ emailIdError: error });
         });
         passwordValidator(this.state.password, () => {
-            this.setState({ passwordError: undefined, loading: false }, () => callBack());
+            this.setState({ passwordError: undefined }, () => callBack());
         }, (error) => {
             this.setState({ passwordError: error, loading: false });
         });
     }
     focusNextField(nextField) {
         this.inputRefs[nextField].input.focus();
+    }
+    login() {
+        this.props.client
+            .query({
+            query: checkForUserLoginCredentials,
+            variables: {
+                mailId: get(this.state, 'email', ''),
+                password: get(this.state, 'password', '')
+            }
+        })
+            .then(data => {
+            if (get(data.data, 'allUsers').length === 0) {
+                this.setState({
+                    passwordError: 'wrong credential',
+                    loading: false,
+                    emailIdError: 'wrong credential'
+                });
+            }
+            else {
+                this.setState({ loading: false }, () => loginSuccessfull(data.data.allUsers[0].id, () => this.props.navigation.navigate('Home'), () => {
+                    Alert.alert('Could not complete Login process. Please login again for login persistance');
+                }));
+            }
+        })
+            .catch(error => {
+            console.log('login error:', error);
+            Alert.alert('Could not complete Signup process. Please login again for login persistance');
+        });
     }
     render() {
         const showEmailErrorMessage = this.state.formSubmitted && !isNil(this.state.emailIdError);
@@ -44,7 +75,7 @@ export default class Login extends PureComponent {
                     onPress: () => this.props.navigation.goBack(null)
                 }, centerComponent: { text: 'Login', style: { color: '#fff' } }, containerStyle: { backgroundColor: guide.buttonColor }, barStyle: "light-content" }),
             React.createElement(View, { style: { flex: 4, justifyContent: 'center', alignItems: 'center' } },
-                React.createElement(Avatar, { source: require("../../../Images/logo.png"), size: "xlarge" })),
+                React.createElement(Avatar, { source: require('../../../Images/logo.png'), size: "xlarge" })),
             React.createElement(View, { style: { flex: 6 } },
                 React.createElement(InputBox, { showErrorMessage: showEmailErrorMessage, errorMessage: this.state.emailIdError, placeHolder: "Email Address", saveRef: (ref) => (this.inputRefs['Email'] = ref), onSubmit: () => this.focusNextField('Password'), onBlur: () => {
                         emailValidator(this.state.email, () => {
@@ -61,7 +92,19 @@ export default class Login extends PureComponent {
                             });
                         });
                     } }),
-                React.createElement(InputBox, { showErrorMessage: showPasswordErrorMessage, errorMessage: this.state.passwordError, secureTextEntry: true, placeHolder: "Password", saveRef: (ref) => (this.inputRefs['Password'] = ref), onBlur: () => {
+                React.createElement(InputBox, { showErrorMessage: showPasswordErrorMessage, errorMessage: this.state.passwordError, secureTextEntry: !this.state.showPassword, extras: {
+                        rightIcon: {
+                            name: !this.state.showPassword ? 'lock' : 'lock-open',
+                            color: 'black',
+                            onPress: () => this.setState({
+                                showPassword: !this.state.showPassword
+                            })
+                        },
+                        rightIconContainerStyle: {
+                            width: 50,
+                            height: 50
+                        }
+                    }, placeHolder: "Password", saveRef: (ref) => (this.inputRefs['Password'] = ref), onBlur: () => {
                         passwordValidator(this.state.password, () => {
                             this.setState({ passwordError: undefined });
                         }, (error) => {
@@ -77,13 +120,11 @@ export default class Login extends PureComponent {
                         });
                     } }),
                 React.createElement(Button, { loadingProps: { color: 'black', animating: true }, title: "Log In", loading: this.state.loading, disabled: this.state.loading, buttonStyle: styles.buttonStyle, containerStyle: { paddingHorizontal: 10, borderRadius: 20 }, onPress: () => {
-                        this.setState({ formSubmitted: true, loading: true }, () => this.validateForm(() => login(this.state.email, this.state.password, () => {
-                            this.setState({ loading: false });
-                            this.props.navigation.navigate('Home');
-                        }, () => {
-                            Alert.alert('Could not Login');
-                        })));
+                        this.setState({ formSubmitted: true, loading: true }, () => this.validateForm(() => {
+                            this.login();
+                        }));
                     } }))));
     }
 }
+export default compose(withApollo)(Login);
 //# sourceMappingURL=index.js.map

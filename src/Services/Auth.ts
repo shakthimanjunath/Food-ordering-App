@@ -1,9 +1,11 @@
 import { AsyncStorage } from 'react-native';
 import { isNil, noop } from 'lodash';
 
-export function isUserLoggedIn(onUserLoggedIn: Function, onUserNotLoggedIn?: Function) {
-  console.log('isUserLoggedIn');
-  AsyncStorage.getItem('USER_LOGGED_IN')
+export function isUserLoggedIn(
+  onUserLoggedIn: Function,
+  onUserNotLoggedIn?: Function
+) {
+  AsyncStorage.getItem('FOOD_ORDERING_APP_USER_TOKEN')
     .then(userToken => {
       !isNil(userToken) && userToken
         ? !isNil(onUserLoggedIn)
@@ -19,7 +21,7 @@ export function isUserLoggedIn(onUserLoggedIn: Function, onUserNotLoggedIn?: Fun
 }
 
 export function logout(onSuccess: Function, onError?: Function) {
-  AsyncStorage.removeItem('USER_LOGGED_IN').then(
+  AsyncStorage.removeItem('FOOD_ORDERING_APP_USER_TOKEN').then(
     () => {
       onSuccess();
     },
@@ -29,16 +31,30 @@ export function logout(onSuccess: Function, onError?: Function) {
   );
 }
 
-export function login(
-  email: string | undefined, // TODO: remove undefined
-  password: string | undefined, // TODO: remove undefined
+export function getUserToken(onFetchSuccess, onFetchError) {
+  AsyncStorage.getItem('FOOD_ORDERING_APP_USER_TOKEN')
+    .then(userToken => {
+      !isNil(userToken)
+        ? !isNil(onFetchSuccess)
+          ? onFetchSuccess(userToken)
+          : noop()
+        : !isNil(onFetchError)
+        ? onFetchError('token empty')
+        : noop();
+    })
+    .catch(() => {
+      !isNil(onFetchError) ? onFetchError('Could not fetch token') : noop();
+    });
+}
+
+// Stores token in async storage for login persistance.
+export function loginSuccessfull(
+  token: String,
   onSuccess: Function,
   onError: Function
 ) {
-  AsyncStorage.setItem('USER_LOGGED_IN', `${email} + ${password}`)
-    .then(() => {
-      onSuccess();
-    })
+  AsyncStorage.setItem('FOOD_ORDERING_APP_USER_TOKEN', token.toString())
+    .then(() => onSuccess())
     .catch(() => {
       onError();
     });

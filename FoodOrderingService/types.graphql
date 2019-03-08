@@ -1,0 +1,30 @@
+# The following types define the data model of the example service
+# based on which the GraphQL API is generated
+
+
+# User can have one order at a time
+type User @model{
+  id:ID! @isUnique
+  name: String!
+  mailId:String! @isUnique
+  seatNumber: String!
+  password: String!
+  order: Order @relation(name: "UserOrder") 
+}
+
+# same menu item can have multiple orders at a time
+type Menu @model{
+  id:ID! @isUnique
+  name:String! @isUnique
+  imageURL: String! 
+  orders: [Order!]! @relation(name: "MenuOrder")
+}
+
+# Order may have multiple menu items at a time`
+# Order have one-one relation ship with user modal
+type Order @model{
+  id:ID! @isUnique
+  status: String!
+  user: User @relation(name: "UserOrder")
+  menuItem: [Menu!]!  @relation(name: "MenuOrder")
+}

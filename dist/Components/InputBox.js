@@ -5,7 +5,7 @@ import { Text, View } from 'react-native';
 export default class InputBox extends PureComponent {
     render() {
         return (React.createElement(View, { style: styles.inputFieldContainer },
-            React.createElement(Input, { ref: ref => this.props.saveRef(ref), inputStyle: styles.inputStyle, style: styles.textInput, inputContainerStyle: styles.textInputContainer, placeholder: this.props.placeHolder, onChangeText: this.props.onChangeText, secureTextEntry: this.props.secureTextEntry, onBlur: this.props.onBlur, onSubmitEditing: this.props.onSubmit }),
+            React.createElement(Input, Object.assign({ ref: ref => this.props.saveRef(ref), inputStyle: styles.inputStyle, style: styles.textInput, inputContainerStyle: styles.textInputContainer, placeholder: this.props.placeHolder, onChangeText: this.props.onChangeText, secureTextEntry: this.props.secureTextEntry, onBlur: this.props.onBlur, onSubmitEditing: this.props.onSubmit }, this.props.extras)),
             React.createElement(Text, { style: styles.errorText }, this.props.showErrorMessage && this.props.errorMessage)));
     }
 }

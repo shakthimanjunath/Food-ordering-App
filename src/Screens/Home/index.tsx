@@ -1,127 +1,132 @@
 import React from 'react';
-import { isNil } from 'lodash';
-import { View, Dimensions, Text, ScrollView } from 'react-native';
-import { Header, Avatar } from 'react-native-elements';
-import { guide } from '../../Styles/CommonStyles';
+import { isNil, get } from 'lodash';
+import { View, Dimensions } from 'react-native';
 import { Drawer } from 'native-base';
 import SideBar from '../../Components/SideBar';
+import { Query } from 'react-apollo';
+import Loader from '../../Components/Loader';
+import Error from '../../Components/Error';
+import { menuItemList } from '../../Services/queries';
+import MenuItemList from '../../Components/MenuScreenComponents/MenuItemList';
+import { menuItemListSubscription } from '../../Services/Subscriptions';
+import HomeScreenHeader from '../../Components/HomeScreenHeader';
 
-const {width, height} = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
-interface HomeProps{
+interface HomeProps {
   navigation: any;
+  client: any;
 }
 
-interface HomeState{
+interface HomeState {
   drawer: boolean;
 }
-
-const Menu = [
-  {
-    name: 'a',
-    image: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg'
-  },
-  {
-    name: 'b',
-    image: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg'
-  },
-  {
-    name: 'c',
-    image: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg'
-  },
-  {
-    name: 'd',
-    image: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg'
-  },
-  {
-    name: 'e',
-    image: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg'
-  },
-  {
-    name: 'f',
-    image: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg'
-  },
-  {
-    name: 'g',
-    image: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg'
-  },
-  {
-    name: 'h',
-    image: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg'
-  },
-]
-
-export default class Home extends React.Component<HomeProps, HomeState>{
-  constructor(props: HomeProps){
+export default class Home extends React.Component<HomeProps, HomeState> {
+  constructor(props: HomeProps) {
     super(props);
-    this.state={
+    this.state = {
       drawer: false
-    }
+    };
   }
   drawer;
-  componentDidMount(){
+  componentDidMount() {
     let hidesplashScreen = this.props.navigation.getParam('hideSplashscreen');
     !isNil(hidesplashScreen) && hidesplashScreen();
   }
 
-  _renderMenuItem(index: number, item: any){
-    return(
-      <View key={index} style={{width: width / 2.8, height: height / 3, marginHorizontal: 15, marginVertical: 5}}>
-        <Avatar
-          source={{
-            uri: item.image
-          }}
-          containerStyle={{flex: 0.7, width: '100%'}}
-        />
-        <Text style={{flex: 0.3, textAlign:'center', marginTop: 10}}>{item.name}</Text>
-      </View>
-    )
-  }
-
   closeDrawer = () => {
-    this.setState({drawer: false})
+    this.setState({ drawer: false });
     this.drawer._root.close();
   };
 
-  openDrawer=() => {
-    this.setState({drawer: true})
+  openDrawer = () => {
+    this.setState({ drawer: true });
     this.drawer._root.open();
   };
 
-  render(){
-    return(
+  subscribeToMenuList(subscribe: Function) {
+    subscribe({
+      document: menuItemListSubscription,
+      fetchPolicy: 'network-only',
+      updateQuery: (previousState, { subscriptionData }) => {
+        let menus;
+
+        // If new menu item is added, add new node to list
+        if (!isNil(subscriptionData.data.Menu.node)) {
+          menus = [
+            ...previousState.allMenus.filter(
+              item => item.id !== subscriptionData.data.Menu.node.id
+            ),
+            subscriptionData.data.Menu.node
+          ];
+        }
+        // If menu item is deleted, remove that item from list
+        else if (!isNil(subscriptionData.data.Menu.previousValues)) {
+          menus = [
+            ...previousState.allMenus.filter(
+              item => item.id !== subscriptionData.data.Menu.previousValues.id
+            )
+          ];
+        }
+        // else return list as it is
+        else {
+          menus = [...previousState.allMenus];
+        }
+
+        return { allMenus: menus };
+      },
+      onError: err => console.error(err)
+    });
+  }
+
+  render() {
+    return (
       <View>
-        <Header
-          leftComponent={{
-            icon: 'menu',
-            color: '#fff',
-            onPress: () => { this.state.drawer ? this.closeDrawer() : this.openDrawer() }
-          }}
-          rightComponent={{
-            icon: 'shopping-cart',
-            color: '#fff',
-            onPress: () => this.props.navigation.navigate('Cart')
-          }}
-          
-          centerComponent={{ text: 'Menu', style: { color: '#fff' } }}
-          containerStyle={{ backgroundColor: guide.buttonColor }}
-          barStyle="light-content"
+        <HomeScreenHeader
+          drawer={this.state.drawer}
+          closeDrawer={this.closeDrawer}
+          openDrawer={this.openDrawer}
+          onRightIconPress={() => this.props.navigation.navigate('Cart')}
         />
         <Drawer
-          ref={(ref) => { this.drawer = ref; }}
-          content={<SideBar navigation={this.props.navigation} closeDrawer={this.closeDrawer}/>}
-          onClose={() => this.closeDrawer()} >
-        </Drawer>
-        <ScrollView style={{ padding : 20, zIndex: -10 }}>
-          <View style={{flexWrap: "wrap", flexDirection :'row'}}>
-          {
-            Menu.map((item: any, index: number)=> {
-              return this._renderMenuItem(index,item)
-            })
+          ref={ref => {
+            this.drawer = ref;
+          }}
+          content={
+            <SideBar
+              navigation={this.props.navigation}
+              closeDrawer={this.closeDrawer}
+            />
           }
-          </View>
-        </ScrollView>
+          onClose={() => this.closeDrawer()}
+        />
+        <Query query={menuItemList}>
+          {({ loading, error, data, subscribeToMore }) => {
+            return (
+              <View
+                style={{
+                  width: width,
+                  height: '90%',
+                  zIndex: -100
+                }}
+              >
+                {loading ? (
+                  <Loader />
+                ) : error ? (
+                  <Error errorMessage="Sorry, Some unexpected error occurred." />
+                ) : get(data, 'allMenus', []).length === 0 ? (
+                  <Error errorMessage="Sorry, No menu items found." />
+                ) : (
+                  <MenuItemList
+                    menuItemList={data}
+                    subscribe={() => this.subscribeToMenuList(subscribeToMore)}
+                  />
+                )}
+              </View>
+            );
+          }}
+        </Query>
       </View>
-    )
+    );
   }
 }
