@@ -26,14 +26,35 @@ export const orderListSubscription = gql `
         status
         menuItem {
           id
-          name
-          imageURL
+          numberOfItems
         }
       }
       updatedFields
       previousValues {
         id
         status
+      }
+    }
+  }
+`;
+export const menuOrderSubscription = gql `
+  subscription newMenuOrder {
+    MenuItemInOrder(filter: { mutation_in: [CREATED, DELETED, UPDATED] }) {
+      mutation
+      node {
+        id
+        numberOfItems
+        menuItem {
+          id
+        }
+        order {
+          id
+        }
+      }
+      updatedFields
+      previousValues {
+        id
+        numberOfItems
       }
     }
   }

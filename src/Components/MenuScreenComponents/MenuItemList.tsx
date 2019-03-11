@@ -4,7 +4,9 @@ import MenuItem from './MenuItem';
 
 interface MenuItemListProps {
   menuItemList: any;
+  userId: string;
   subscribe: Function;
+  onOrderCreation(orderId: String): void;
 }
 
 export default class MenuItemList extends React.PureComponent<
@@ -19,7 +21,14 @@ export default class MenuItemList extends React.PureComponent<
       <ScrollView style={{ zIndex: -10 }}>
         <View style={{ flexWrap: 'wrap', flexDirection: 'row' }}>
           {this.props.menuItemList.allMenus.map((item: any, index: number) => {
-            return <MenuItem item={item} key={index} />;
+            return (
+              <MenuItem
+                item={item}
+                key={index}
+                userId={this.props.userId}
+                onOrderCreation={this.props.onOrderCreation}
+              />
+            );
           })}
         </View>
         <View style={{ height: 30 }} />

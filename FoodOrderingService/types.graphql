@@ -12,12 +12,18 @@ type User @model{
   order: Order @relation(name: "UserOrder") 
 }
 
-# same menu item can have multiple orders at a time
 type Menu @model{
   id:ID! @isUnique
   name:String! @isUnique
-  imageURL: String! 
-  orders: [Order!]! @relation(name: "MenuOrder")
+  imageURL: String!  
+  menuItemInOrder : MenuItemInOrder @relation(name: "MenuItemInOrderMenu")
+}
+
+type MenuItemInOrder @model{
+  id:ID! @isUnique
+  menuItem: Menu @relation(name: "MenuItemInOrderMenu"),
+  numberOfItems: Int!
+  order: Order @relation(name: "MenuItemInOrderOrder")
 }
 
 # Order may have multiple menu items at a time`
@@ -26,5 +32,5 @@ type Order @model{
   id:ID! @isUnique
   status: String!
   user: User @relation(name: "UserOrder")
-  menuItem: [Menu!]!  @relation(name: "MenuOrder")
+  menuItemInOrder: [MenuItemInOrder!]!  @relation(name: "MenuItemInOrderOrder")
 }

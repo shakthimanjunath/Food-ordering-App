@@ -1,176 +1,217 @@
 import React from 'react';
 import { View, Text, Dimensions, ImageBackground, Alert } from 'react-native';
 import { Avatar, Icon } from 'react-native-elements';
-import { compose, withApollo } from 'react-apollo';
-import { getUserToken } from '../../Services/Auth';
-import { getOrdersForUser } from '../../Services/queries';
+import { compose, withApollo, Query } from 'react-apollo';
+import {
+  getOrdersForUser,
+  getAllMenuOrderItemsForGivenOrder
+} from '../../Services/queries';
 import { get, isNil } from 'lodash';
-import { CREATE_ORDER, UPDATE_ORDER } from '../../Services/Mutations';
+import {
+  CREATE_MENU_ORDER_ITEM_FOR_EXISTING_ORDER,
+  UPDATE_MENU_ORDER_ITEM
+} from '../../Services/Mutations';
+import {
+  CREATE_MENU_ORDER_ITEM_FOR_FOR_NEW_ORDER,
+  CREATE_ORDER
+} from '../../Services/Mutations';
+// import {
+//   CREATE_ORDER,
+//   UPDATE_ORDER,
+//   CREATE_MENU_ORDER_ITEM
+// } from '../../Services/Mutations';
 
 const { width, height } = Dimensions.get('window');
 
 interface MenuItemProps {
   item: any;
   client: any;
+  userId: string;
+  onOrderCreation(orderId: String): void;
 }
 
 class MenuItem extends React.PureComponent<MenuItemProps> {
-  createOrder(userId) {
-    console.log('[CREATE ORDER]');
+  increaseNumberOfProducts(menuOrderItem) {
+    console.log(menuOrderItem.numberOfItems, menuOrderItem.id, '&&&&&');
     this.props.client
       .mutate({
-        mutation: CREATE_ORDER,
+        mutation: UPDATE_MENU_ORDER_ITEM,
         variables: {
-          status: 'Order Confirmed',
-          userId: userId,
-          menuItemIds: [this.props.item.id]
+          id: menuOrderItem.id,
+          numberOfItems: menuOrderItem.numberOfItems + 1
         }
       })
       .then(data => {
-        Alert.alert(`${this.props.item.name} is Added to cart`);
-        console.log('order placed. order item', data);
+        Alert.alert(`${this.props.item.name} is added to your cart`);
+        console.log('data from increaseNumberOfProducts ', data);
+        this.props.onOrderCreation(data.data.updateMenuItemInOrder.order.id);
       })
       .catch(error => {
-        console.log('error placing order', error);
-        Alert.alert('Error placing order');
+        Alert.alert('Could not create order');
+        console.log('error in increaseNumberOfProducts ', error);
       });
   }
 
-  updateOrder(orders, userId) {
-    console.log('[UPDATE ORDER]');
-    let alreadyAddedMenuItems = orders.map(item => {
-      return item.menuItem;
-    });
-    alreadyAddedMenuItems = orders[0].menuItem.map(menuItem => {
-      return menuItem.id;
-    });
-    alreadyAddedMenuItems = alreadyAddedMenuItems.filter(
-      id => id !== this.props.item.id
+  addNewMenuItem(menuItemId, orderId) {
+    this.props.client
+      .mutate({
+        mutation: CREATE_MENU_ORDER_ITEM_FOR_EXISTING_ORDER,
+        variables: {
+          menuItemId: menuItemId,
+          orderId: orderId
+        }
+      })
+      .then(data => {
+        Alert.alert(`${this.props.item.name} is added to your cart`);
+        console.log('data from addNewMenuItem', data);
+        this.props.onOrderCreation(data.data.createMenuItemInOrder.order.id);
+      })
+      .catch(error => {
+        Alert.alert('Could not create order');
+        console.log('error in addNewMenuItem: ', error);
+      });
+  }
+
+  updateOrder(order) {
+    let menuItemOrderList = get(order, 'menuItem', []).filter(
+      item => !isNil(item.menuItem) && item.menuItem.id === this.props.item.id
     );
-    const menuItemList = isNil(alreadyAddedMenuItems)
-      ? [this.props.item.id]
-      : [...alreadyAddedMenuItems, this.props.item.id];
+    // if menu item that is being added is already added
+    if (!isNil(menuItemOrderList) && menuItemOrderList.length > 0) {
+      this.increaseNumberOfProducts(menuItemOrderList[0]);
+    } else {
+      this.addNewMenuItem(this.props.item.id, order.id);
+    }
+  }
+
+  createOrder(userId) {
     this.props.client
       .mutate({
-        mutation: UPDATE_ORDER,
+        mutation: CREATE_MENU_ORDER_ITEM_FOR_FOR_NEW_ORDER,
         variables: {
-          id: orders[0].id,
-          status: 'Order Confirmed',
-          userId: userId,
-          menuItemIds: menuItemList
+          menuItemId: this.props.item.id
         }
       })
       .then(data => {
-        console.log('order placed. order item', data);
-        Alert.alert(`${this.props.item.name} is Item Added to cart`);
-      })
-      .catch(error => {
-        console.log('error placing order', error);
-        Alert.alert('Error placing order');
-      });
-  }
-
-  addItemToCart() {
-    getUserToken(
-      userId => {
-        console.log('userId', userId);
         this.props.client
-          .query({
-            query: getOrdersForUser,
+          .mutate({
+            mutation: CREATE_ORDER,
             variables: {
-              id: userId
-            }
+              userId: userId,
+              menuItemIds: [data.data.createMenuItemInOrder.id]
+            },
+            refetchQueries: [
+              {
+                query: getOrdersForUser,
+                variables: { id: this.props.userId }
+              }
+            ]
           })
           .then(data => {
-            console.log(data);
-            if (get(data.data, 'allOrders', []).length === 0) {
-              this.createOrder(userId);
-            } else {
-              this.updateOrder(get(data.data, 'allOrders', []), userId);
-            }
+            Alert.alert(`${this.props.item.name} is added to your cart`);
+            console.log('data from CREATE_ORDER', data);
+            this.props.onOrderCreation(data.data.createOrder.id);
           })
-          .catch(error => console.log(error));
-      },
-      error => {
-        console.log(error, 'error , no token found');
-      }
-    );
+          .catch(error => {
+            Alert.alert('Could not create order');
+            console.log('error in creating new order: ', error);
+          });
+      })
+      .catch(error => {
+        Alert.alert('Could not create order');
+        console.log('error in creating orderMenuItem: ', error);
+      });
+  }
+
+  // TODO: Refactor. Fetching userToken onpress everytime is costly. Try to fetch userId and orderId on mount itself.
+  onAddToCartPress(data: any) {
+    if (get(data, 'allOrders', []).length === 0) {
+      this.createOrder(this.props.userId);
+    } else {
+      this.updateOrder(get(data, 'allOrders[0]'));
+    }
   }
 
   render() {
     return (
-      <View
-        style={{
-          width: width / 2,
-          height: height / 4,
-          position: 'relative',
-          justifyContent: 'center',
-          alignItems: 'center'
+      <Query query={getOrdersForUser} variables={{ id: this.props.userId }}>
+        {({ data }) => {
+          return (
+            <View
+              style={{
+                width: width / 2,
+                height: height / 4,
+                position: 'relative',
+                justifyContent: 'center',
+                alignItems: 'center'
+              }}
+            >
+              <ImageBackground
+                source={{
+                  uri: this.props.item.imageURL
+                }}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  zIndex: -10,
+                  opacity: 0.7
+                }}
+              />
+              <Icon
+                containerStyle={{
+                  position: 'absolute',
+                  zIndex: 30,
+                  bottom: 5,
+                  right: 5,
+                  backgroundColor: '#000',
+                  borderRadius: 50,
+                  height: 70,
+                  width: 70,
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}
+                name="add"
+                color="#fff"
+                size={40}
+                onPress={() => {
+                  this.onAddToCartPress(data);
+                }}
+              />
+              <View
+                style={{
+                  position: 'absolute',
+                  zIndex: 10,
+                  height: height / 4.6,
+                  width: width / 2.3
+                }}
+              >
+                <Text
+                  style={{
+                    width: width / 2.3,
+                    textAlign: 'center',
+                    fontSize: 20,
+                    color: 'white',
+                    justifyContent: 'center',
+                    backgroundColor: '#000'
+                  }}
+                  numberOfLines={3}
+                >
+                  {this.props.item.name}
+                </Text>
+                <Avatar
+                  source={{
+                    uri: this.props.item.imageURL
+                  }}
+                  containerStyle={{
+                    flex: 1,
+                    width: width / 2.3
+                  }}
+                />
+              </View>
+            </View>
+          );
         }}
-      >
-        <ImageBackground
-          source={{
-            uri: this.props.item.imageURL
-          }}
-          style={{
-            width: '100%',
-            height: '100%',
-            zIndex: -10,
-            opacity: 0.7
-          }}
-        />
-        <Icon
-          containerStyle={{
-            position: 'absolute',
-            zIndex: 30,
-            bottom: 5,
-            right: 5,
-            backgroundColor: '#000',
-            borderRadius: 50,
-            height: 70,
-            width: 70,
-            justifyContent: 'center',
-            alignItems: 'center'
-          }}
-          name="add"
-          color="#fff"
-          size={40}
-          onPress={() => {
-            this.addItemToCart();
-          }}
-        />
-        <View
-          style={{
-            position: 'absolute',
-            zIndex: 10,
-            height: height / 4.6,
-            width: width / 2.3
-          }}
-        >
-          <Text
-            style={{
-              width: width / 2.3,
-              textAlign: 'center',
-              fontSize: 20,
-              color: 'white',
-              justifyContent: 'center',
-              backgroundColor: '#000'
-            }}
-            numberOfLines={3}
-          >
-            {this.props.item.name}
-          </Text>
-          <Avatar
-            source={{
-              uri: this.props.item.imageURL
-            }}
-            containerStyle={{
-              flex: 1,
-              width: width / 2.3
-            }}
-          />
-        </View>
-      </View>
+      </Query>
     );
   }
 }

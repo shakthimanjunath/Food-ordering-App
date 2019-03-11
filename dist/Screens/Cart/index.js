@@ -7,7 +7,7 @@ import { getCartProducts } from '../../Services/queries';
 import Loader from '../../Components/Loader';
 import Error from '../../Components/Error';
 import { get, isNil } from 'lodash';
-import { orderListSubscription } from '../../Services/Subscriptions';
+import { menuOrderSubscription } from '../../Services/Subscriptions';
 import CartItemList from '../../Components/CartScreenComponents/CartItemList';
 const { width, height } = Dimensions.get('window');
 export default class Cart extends React.Component {
@@ -28,7 +28,7 @@ export default class Cart extends React.Component {
     }
     subscribeToMenuList(subscribe) {
         subscribe({
-            document: orderListSubscription,
+            document: menuOrderSubscription,
             fetchPolicy: 'network-only',
             updateQuery: (previousState, { subscriptionData }) => {
                 let menus;
@@ -63,7 +63,7 @@ export default class Cart extends React.Component {
                         this.props.navigation.goBack();
                     }
                 }, centerComponent: { text: 'Your Cart', style: { color: '#fff' } }, containerStyle: { backgroundColor: guide.buttonColor }, barStyle: "light-content" }),
-            React.createElement(Query, { query: getCartProducts, variables: {
+            React.createElement(Query, { query: getCartProducts, fetchPolicy: "network-only", variables: {
                     id: get(this.props.navigation, 'state.params.userId', '')
                 } }, ({ loading, error, data, subscribeToMore }) => {
                 console.log(get(data, 'allOrders[0].menuItem', []), error, loading, '*******');

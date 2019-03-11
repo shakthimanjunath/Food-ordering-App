@@ -27,20 +27,31 @@ export default class MenuItemList extends React.PureComponent<
       >
         <Avatar
           source={{
-            uri: this.props.item.imageURL
+            uri: this.props.item.menuItem.imageURL
           }}
           containerStyle={{ height: '100%', width: '30%' }}
         />
-        <Text
+
+        <View
           style={{
             width: '70%',
             height: '90%',
-            paddingHorizontal: 10,
-            fontSize: 20
+            paddingHorizontal: 10
           }}
         >
-          {this.props.item.name}
-        </Text>
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: 'bold'
+            }}
+          >
+            {this.props.item.menuItem.name}
+          </Text>
+          <Text style={{ fontSize: 15, color: 'grey', marginTop: 10 }}>
+            <Text style={{ fontWeight: 'bold' }}>Number Of Items:</Text>{' '}
+            {this.props.item.numberOfItems}
+          </Text>
+        </View>
       </View>
     );
   }

@@ -32,14 +32,12 @@ export const getOrdersForUser = gql`
   query getOrderForCurrentUser($id: ID) {
     allOrders(filter: { user: { id: $id } }) {
       id
-      status
       menuItem {
         id
-        name
-      }
-      user {
-        id
-        name
+        numberOfItems
+        menuItem {
+          id
+        }
       }
     }
   }
@@ -51,8 +49,41 @@ export const getCartProducts = gql`
       id
       menuItem {
         id
+        numberOfItems
+        menuItem {
+          id
+          name
+          imageURL
+        }
+      }
+    }
+  }
+`;
+
+export const getAllMenuOrderItemsForGivenOrder = gql`
+  query MenuItemInOrder($id: ID) {
+    allMenuItemInOrders(filter: { order: { id: $id } }) {
+      id
+      menuItem {
+        id
         name
         imageURL
+      }
+      numberOfItems
+      order {
+        id
+        status
+      }
+    }
+  }
+`;
+
+export const getOrderId = gql`
+  query getUserInfo($id: ID) {
+    allUsers(filter: { id: $id }) {
+      id
+      order {
+        id
       }
     }
   }

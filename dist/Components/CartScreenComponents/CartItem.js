@@ -15,14 +15,21 @@ export default class MenuItemList extends React.PureComponent {
                 marginTop: 2
             } },
             React.createElement(Avatar, { source: {
-                    uri: this.props.item.imageURL
+                    uri: this.props.item.menuItem.imageURL
                 }, containerStyle: { height: '100%', width: '30%' } }),
-            React.createElement(Text, { style: {
+            React.createElement(View, { style: {
                     width: '70%',
                     height: '90%',
-                    paddingHorizontal: 10,
-                    fontSize: 20
-                } }, this.props.item.name)));
+                    paddingHorizontal: 10
+                } },
+                React.createElement(Text, { style: {
+                        fontSize: 20,
+                        fontWeight: 'bold'
+                    } }, this.props.item.menuItem.name),
+                React.createElement(Text, { style: { fontSize: 15, color: 'grey', marginTop: 10 } },
+                    React.createElement(Text, { style: { fontWeight: 'bold' } }, "Number Of Items:"),
+                    ' ',
+                    this.props.item.numberOfItems))));
     }
 }
 //# sourceMappingURL=CartItem.js.map

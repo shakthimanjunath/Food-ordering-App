@@ -7,7 +7,10 @@ import { getCartProducts } from '../../Services/queries';
 import Loader from '../../Components/Loader';
 import Error from '../../Components/Error';
 import { get, isNil } from 'lodash';
-import { orderListSubscription } from '../../Services/Subscriptions';
+import {
+  orderListSubscription,
+  menuOrderSubscription
+} from '../../Services/Subscriptions';
 import CartItemList from '../../Components/CartScreenComponents/CartItemList';
 
 const { width, height } = Dimensions.get('window');
@@ -44,7 +47,7 @@ export default class Cart extends React.Component<CartProps> {
 
   subscribeToMenuList(subscribe: Function) {
     subscribe({
-      document: orderListSubscription,
+      document: menuOrderSubscription,
       fetchPolicy: 'network-only',
       updateQuery: (previousState, { subscriptionData }) => {
         let menus;
@@ -94,6 +97,7 @@ export default class Cart extends React.Component<CartProps> {
         />
         <Query
           query={getCartProducts}
+          fetchPolicy="network-only"
           variables={{
             id: get(this.props.navigation, 'state.params.userId', '')
           }}

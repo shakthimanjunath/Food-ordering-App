@@ -3,15 +3,16 @@ import { isNil, get } from 'lodash';
 import { View, Dimensions } from 'react-native';
 import { Drawer } from 'native-base';
 import SideBar from '../../Components/SideBar';
-import { Query } from 'react-apollo';
+import { Query, compose, withApollo } from 'react-apollo';
 import Loader from '../../Components/Loader';
 import Error from '../../Components/Error';
-import { menuItemList } from '../../Services/queries';
+import { menuItemList, getAllMenuOrderItemsForGivenOrder, getOrderId } from '../../Services/queries';
 import MenuItemList from '../../Components/MenuScreenComponents/MenuItemList';
 import { menuItemListSubscription } from '../../Services/Subscriptions';
-import HomeScreenHeader from '../../Components/HomeScreenHeader';
+import { getUserToken } from '../../Services/Auth';
+import HeaderComp from '../../Components/HomeHeaderComponents/Header';
 const { width } = Dimensions.get('window');
-export default class Home extends React.Component {
+class Home extends React.Component {
     constructor(props) {
         super(props);
         this.closeDrawer = () => {
@@ -23,8 +24,17 @@ export default class Home extends React.Component {
             this.drawer._root.open();
         };
         this.state = {
-            drawer: false
+            drawer: false,
+            userId: undefined,
+            numberOfItemsInCart: 0
         };
+    }
+    componentWillMount() {
+        getUserToken(userId => {
+            this.setState({ userId }, () => this.getNumberOfItemsInCart());
+        }, error => {
+            console.log(error, 'error , no token found');
+        });
     }
     componentDidMount() {
         let hidesplashScreen = this.props.navigation.getParam('hideSplashscreen');
@@ -58,9 +68,38 @@ export default class Home extends React.Component {
             onError: err => console.error(err)
         });
     }
+    getNumberOfItemsInCart() {
+        this.props.client
+            .query({
+            query: getOrderId,
+            variables: { id: this.state.userId }
+        })
+            .then(data => {
+            console.log('[FETCHING INITIAL ITEM COUNT IN CART]', data);
+            this.productAddedToCart(data.data.allUsers[0].order.id);
+        })
+            .catch(error => console.log('[HOME SCREEN]: ', error));
+    }
+    productAddedToCart(orderId) {
+        this.props.client
+            .query({
+            query: getAllMenuOrderItemsForGivenOrder,
+            variables: { id: orderId },
+            fetchPolicy: 'network-only'
+        })
+            .then(data => {
+            console.log('[orderId from productAddedToCart]', orderId, data);
+            let numberOfItems = 0;
+            if (data.data.allMenuItemInOrders.length > 0) {
+                data.data.allMenuItemInOrders.map(menuOrderItem => (numberOfItems = menuOrderItem.numberOfItems + numberOfItems));
+                this.setState({ numberOfItemsInCart: numberOfItems });
+            }
+        })
+            .catch(error => console.log('[HOME SCREEN]: ', error));
+    }
     render() {
         return (React.createElement(View, null,
-            React.createElement(HomeScreenHeader, { drawer: this.state.drawer, closeDrawer: this.closeDrawer, openDrawer: this.openDrawer, onRightIconPress: userId => this.props.navigation.navigate('Cart', { userId: userId }) }),
+            React.createElement(HeaderComp, { numberOfItemsInCart: this.state.numberOfItemsInCart, userId: this.state.userId, onRightIconPress: userId => this.props.navigation.navigate('Cart', { userId: userId }), drawer: this.state.drawer, closeDrawer: this.closeDrawer, openDrawer: this.openDrawer }),
             React.createElement(Drawer, { ref: ref => {
                     this.drawer = ref;
                 }, content: React.createElement(SideBar, { navigation: this.props.navigation, closeDrawer: this.closeDrawer }), onClose: () => this.closeDrawer() }),
@@ -69,8 +108,9 @@ export default class Home extends React.Component {
                         width: width,
                         height: '90%',
                         zIndex: -100
-                    } }, loading ? (React.createElement(Loader, null)) : error ? (React.createElement(Error, { errorMessage: "Sorry, Some unexpected error occurred." })) : get(data, 'allMenus', []).length === 0 ? (React.createElement(Error, { errorMessage: "Sorry, No menu items found." })) : (React.createElement(MenuItemList, { menuItemList: data, subscribe: () => this.subscribeToMenuList(subscribeToMore) }))));
+                    } }, loading && !isNil(this.state.userId) ? (React.createElement(Loader, null)) : error ? (React.createElement(Error, { errorMessage: "Sorry, Some unexpected error occurred." })) : get(data, 'allMenus', []).length === 0 ? (React.createElement(Error, { errorMessage: "Sorry, No menu items found." })) : (React.createElement(MenuItemList, { userId: this.state.userId, menuItemList: data, subscribe: () => this.subscribeToMenuList(subscribeToMore), onOrderCreation: orderId => this.productAddedToCart(orderId) }))));
             })));
     }
 }
+export default compose(withApollo)(Home);
 //# sourceMappingURL=index.js.map
